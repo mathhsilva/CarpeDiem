@@ -1,0 +1,108 @@
+unit Main;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, DMDados, Login, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Param, FireDAC.Stan.Error,
+  FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, FireDAC.Stan.Async, Usuarios, AttEstr, SqlSis;
+
+type
+  TFMain = class(TForm)
+    MainMenu1: TMainMenu;
+    bCadastros: TMenuItem;
+    bUsuarios: TMenuItem;
+    bAtualizarTabelas: TMenuItem;
+    Inst: TSQLInstall;
+    procedure FormCreate(Sender: TObject);
+    procedure bUsuariosClick(Sender: TObject);
+    procedure bAtualizarTabelasClick(Sender: TObject);
+    procedure InstCreateFields(Sender: TObject);
+    procedure InstCreateSequences(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FMain: TFMain;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFMain.bAtualizarTabelasClick(Sender: TObject);
+var
+  Query: TFDQuery;
+begin
+  Query := TFDQuery.Create(nil);
+  try
+    Query.Connection := DM.Connection;
+    // Verifica se as tabelas já existem
+    if not DM.TabelasExistentes then
+    begin
+      // Script SQL para criar as tabelas e sequências
+      Query.SQL.Text := 'CREATE TABLE usuarios (' +
+        '  usu_id SERIAL PRIMARY KEY,' +
+        '  usu_login VARCHAR NOT NULL,' +
+        '  usu_email VARCHAR NOT NULL,' +
+        '  usu_senha VARCHAR NOT NULL,' +
+        '  usu_status VARCHAR NOT NULL,' +
+        '  usu_cad_data DATE NULL' +
+        ');' +
+        'CREATE SEQUENCE usu_cod_seq;';
+      // Executa o script SQL
+      try
+        Query.ExecSQL;
+        DM.Connection.Commit;
+        ShowMessage('Estrutura de tabelas atualizada com sucesso!');
+      except
+        on E: Exception do
+        begin
+          DM.Connection.Rollback;
+          ShowMessage('Erro ao atualizar estrutura de tabelas: ' + E.Message);
+        end;
+      end;
+    end
+    else
+    begin
+      ShowMessage('A tabela e a sequência já existem. Não é necessário atualizar.');
+    end;
+  finally
+    Query.Free;
+  end;
+end;
+
+procedure TFMain.InstCreateFields(Sender: TObject);
+begin
+  Inst.AddTable('Usuarios');
+  // Adicionando campos à tabela Usuarios
+  Inst.AddField('Usuarios', 'usu_id', 'SERIAL', 0, 0, 70, True, 'usu_id', 'Identificador único', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_login', 'VARCHAR', 255, 0, 100, True, 'usu_login', 'Login do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_email', 'VARCHAR', 255, 0, 100, True, 'usu_email', 'Email do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_senha', 'VARCHAR', 255, 0, 100, True, 'usu_senha', 'Senha do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_status', 'VARCHAR', 50, 0, 70, True, 'usu_status', 'Status do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_cad_data', 'DATE', 0, 0, 70, False, 'usu_cad_data', 'Data de Cadastro', '', False, '', '', '', '0');
+end;
+
+procedure TFMain.InstCreateSequences(Sender: TObject);
+begin
+  Inst.AddSequence('usu_cod_seq', 1, 1);
+end;
+
+procedure TFMain.bUsuariosClick(Sender: TObject);
+begin
+  FUsuarios:= TFUsuarios.Create(Self);
+  FUsuarios.Show;
+end;
+
+procedure TFMain.FormCreate(Sender: TObject);
+begin
+  Application.CreateForm(TDM, DM);
+  FLogin := TFLogin.Create(Self);
+  FLogin.ShowModal;
+end;
+
+end.

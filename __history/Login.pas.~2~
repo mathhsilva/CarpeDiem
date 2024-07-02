@@ -1,0 +1,29 @@
+unit Login;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Buttons, SQLBtn, Vcl.StdCtrls, Vcl.Mask, SQLEd, Vcl.ExtCtrls;
+
+type
+  TFLogin = class(TForm)
+    pCenter: TPanel;
+    edLogin: TSQLEd;
+    edSenha: TSQLEd;
+    bEntrar: TSQLBtn;
+    bSair: TSQLBtn;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FLogin: TFLogin;
+
+implementation
+
+{$R *.dfm}
+
+end.

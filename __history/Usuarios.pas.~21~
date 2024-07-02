@@ -1,0 +1,193 @@
+unit Usuarios;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Data.DB, Vcl.StdCtrls, Vcl.Mask, SQLEd, Vcl.Grids, Vcl.DBGrids, SQLGrid, System.RegularExpressions, Vcl.Buttons, SQLBtn, DMDados;
+
+type
+  TFUsuarios = class(TForm)
+    pFundo: TPanel;
+    pDireita: TPanel;
+    pBottom: TPanel;
+    Grid: TSQLGrid;
+    edLogin: TSQLEd;
+    edSenha: TSQLEd;
+    edEmail: TSQLEd;
+    edStatus: TSQLEd;
+    edDataCad: TSQLEd;
+    edConfirmSenha: TSQLEd;
+    bIncluir: TSQLBtn;
+    bGravar: TSQLBtn;
+    dsUsuarios: TDataSource;
+    bExcluir: TSQLBtn;
+    procedure edConfirmSenhaExit(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure edEmailExit(Sender: TObject);
+    procedure bIncluirClick(Sender: TObject);
+    procedure bGravarClick(Sender: TObject);
+    procedure bExcluirClick(Sender: TObject);
+  private
+    { Private declarations }
+    function IsValidEmail (Email: string): Boolean;
+  public
+    { Public declarations }
+    procedure validaSenha;
+  end;
+
+var
+  FUsuarios: TFUsuarios;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFUsuarios.bExcluirClick(Sender: TObject);
+var
+  UsuarioID: Integer;
+begin
+  if not DM.qryUsu.IsEmpty then
+  begin
+    UsuarioID := DM.qryUsu.FieldByName('usu_id').AsInteger;
+
+    if MessageDlg('Tem certeza que deseja excluir este usuário?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    begin
+      DM.qryUsu.Delete;
+      DM.qryUsu.ApplyUpdates;
+      DM.qryUsu.Refresh;
+    end;
+  end
+  else
+  begin
+    ShowMessage('Nenhum usuário selecionado.');
+  end;
+end;
+
+procedure TFUsuarios.bGravarClick(Sender: TObject);
+var
+  SQL: string;
+begin
+  SQL := 'INSERT INTO usuarios (usu_login, usu_senha, usu_email, usu_status, usu_cad_data) ' +
+         'VALUES (' + QuotedStr(edLogin.Text) + ', ' +
+                      QuotedStr(edSenha.Text) + ', ' +
+                      QuotedStr(edEmail.Text) + ', ' +
+                      QuotedStr(edStatus.Text) + ', ' +
+                      QuotedStr(edDataCad.Text) + ')';
+
+  try
+    // Chame a função SaveData da DMDados para executar o comando SQL
+    DM.SaveData(SQL);
+    ShowMessage('Dados gravados com sucesso!');
+    edLogin.Text:='';
+    edSenha.Text:='';
+    edEmail.Text:='';
+    edStatus.Text:='';
+    edConfirmSenha.Text:='';
+    DM.qryUsu.Refresh;
+    Grid.Refresh;
+  except
+    on E: Exception do
+      ShowMessage('Erro ao gravar dados: ' + E.Message);
+  end;
+end;
+
+procedure TFUsuarios.bIncluirClick(Sender: TObject);
+begin
+  pBottom.Visible:= True;
+end;
+
+procedure TFUsuarios.edConfirmSenhaExit(Sender: TObject);
+begin
+  validaSenha;
+end;
+
+procedure TFUsuarios.edEmailExit(Sender: TObject);
+begin
+  IsValidEmail(edEmail.Text);
+end;
+
+procedure TFUsuarios.FormCreate(Sender: TObject);
+begin
+  // Configurar o dataset para trabalhar em modo de atualização em cache
+  DM.qryUsu.CachedUpdates := True;
+  // Configurar o provedor de atualização
+  DM.qryUsu.UpdateOptions.AutoCommitUpdates := True; // Aplicar automaticamente as atualizações ao chamar ApplyUpdates
+  edDataCad.Text:=FormatDateTime('dd/mm/yyyy hh:nn:ss', Now);
+  DM.Connection.Connected := True; // Conectar ao banco de dados
+
+  // Configuração da consulta SQL
+  DM.qryUsu.SQL.Text := 'SELECT usu_id, usu_login, usu_email, usu_status FROM usuarios';
+  DM.qryUsu.Open;
+  // Configuração das colunas no TSQLGrid
+  Grid.Columns.Clear; // Limpar colunas existentes, se houver
+
+  // Adicionar colunas manualmente
+  with Grid.Columns.Add do
+  begin
+    FieldName := 'usu_id';
+    Title.Caption := 'ID';
+    Width := 50;
+  end;
+
+  with Grid.Columns.Add do
+  begin
+    FieldName := 'usu_login';
+    Title.Caption := 'Login';
+    Width := 100;
+  end;
+
+  with Grid.Columns.Add do
+  begin
+    FieldName := 'usu_email';
+    Title.Caption := 'E-mail';
+    Width := 150;
+  end;
+
+  with Grid.Columns.Add do
+  begin
+    FieldName := 'usu_status';
+    Title.Caption := 'Status';
+    Width := 80;
+  end;
+end;
+
+function TFUsuarios.IsValidEmail(Email: string): Boolean;
+var
+  AtPos, DotPos: Integer;
+begin
+  Result := False;
+  // Encontrar a posição do "@" e do último "."
+  AtPos := Pos('@', Email);
+  DotPos := LastDelimiter('.', Email);
+  // Verificar se há pelo menos um caractere antes do "@" e entre "@" e "."
+  if (AtPos > 1) and (DotPos > AtPos + 1) then
+  begin
+    // Verificar se o último "." vem depois do "@"
+    if DotPos > AtPos then
+    begin
+      Result := True;
+      // Se o email for válido, permitir que o foco passe para o campo de senha
+      edSenha.SetFocus;
+    end;
+  end;
+  // Se o email não for válido, exibir mensagem de erro e focar no campo de email
+  if not Result then
+  begin
+    ShowMessage('Por favor, insira um email válido.');
+    edEmail.SetFocus;
+  end;
+end;
+
+procedure TFUsuarios.validaSenha;
+begin
+  if edSenha.Text=edConfirmSenha.Text then begin
+    edStatus.SetFocus;
+  end else begin
+    ShowMessage('As senhas não são iguais, favor validar!');
+    edConfirmSenha.SetFocus;
+  end;
+end;
+
+
+end.

@@ -1,0 +1,59 @@
+unit DMDados;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, Data.DB,
+  FireDAC.Comp.DataSet, FireDAC.Comp.Client, FireDAC.Phys.PG, FireDAC.Phys.PGDef;
+
+type
+  TDM = class(TDataModule)
+    Connection: TFDConnection;
+    qryUsu: TFDQuery;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    function ValidateUser(const AUsername, APassword: string): Boolean;
+    function TabelasExistentes: Boolean;
+  end;
+
+var
+  DM: TDM;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+function TDM.ValidateUser(const AUsername, APassword: string): Boolean;
+begin
+  Result := False;
+  qryUsu.SQL.Text := 'SELECT COUNT(*) FROM usuarios WHERE usu_login = :login AND usu_senha = :senha';
+  qryUsu.ParamByName('login').AsString := AUsername;
+  qryUsu.ParamByName('senha').AsString := APassword;
+  qryUsu.Open;
+  if not qryUsu.IsEmpty then
+  begin
+    Result := qryUsu.Fields[0].AsInteger > 0;
+  end;
+  qryUsu.Close;
+end;
+
+function TDM.TabelasExistentes: Boolean;
+var
+  Query: TFDQuery;
+begin
+  Query := TFDQuery.Create(nil);
+  try
+    Query.Connection := Connection;
+    Query.SQL.Text := 'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = ''public'' AND table_name IN (''usuarios''))';
+    Query.Open;
+    Result := Query.Fields[0].AsBoolean;
+  finally
+    Query.Free;
+  end;
+end;
+
+end.

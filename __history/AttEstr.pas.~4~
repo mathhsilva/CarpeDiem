@@ -1,0 +1,62 @@
+unit AttEstr;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Buttons, SQLBtn, SqlSis;
+
+type
+  TFAttEstr = class(TForm)
+    bAtualizar: TSQLBtn;
+    Inst: TSQLInstall;
+    procedure bAtualizarClick(Sender: TObject);
+    procedure InstCreateSequences(Sender: TObject);
+    procedure InstCreateFields(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FAttEstr: TFAttEstr;
+
+implementation
+
+{$R *.dfm}
+
+uses Main;
+
+procedure TFAttEstr.bAtualizarClick(Sender: TObject);
+var
+  resposta: Integer;
+begin
+  resposta := MessageDlg('Deseja atualizar a estrutura de dados?', mtConfirmation, [mbYes, mbNo], 0);
+  if resposta = mrYes then
+  begin
+    InstCreateFields(Self);
+  end
+  else if resposta = mrNo then
+  begin
+    Close;
+  end;
+end;
+
+procedure TFAttEstr.InstCreateFields(Sender: TObject);
+begin
+  Inst.AddTable('Usuarios');
+  Inst.AddField('Usuarios', 'usu_id', 'SERIAL', 0, 0, 70, True, 'usu_id', 'Identificador único', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_login', 'VARCHAR', 255, 0, 100, True, 'usu_login', 'Login do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_email', 'VARCHAR', 255, 0, 100, True, 'usu_email', 'Email do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_senha', 'VARCHAR', 255, 0, 100, True, 'usu_senha', 'Senha do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_status', 'VARCHAR', 50, 0, 70, True, 'usu_status', 'Status do Usuário', '', False, '', '', '', '0');
+  Inst.AddField('Usuarios', 'usu_cad_data', 'DATE', 0, 0, 70, False, 'usu_cad_data', 'Data de Cadastro', '', False, '', '', '', '0');
+end;
+
+procedure TFAttEstr.InstCreateSequences(Sender: TObject);
+begin
+   Inst.AddSequence('usu_cod_seq', 1, 1);
+end;
+
+end.
