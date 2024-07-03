@@ -6,7 +6,8 @@ uses
   Login in 'Login.pas' {FLogin},
   DMDados in 'DMDados.pas' {DM: TDataModule},
   Usuarios in 'Usuarios.pas' {FUsuarios},
-  AttEstr in 'AttEstr.pas' {FAttEstr};
+  AttEstr in 'AttEstr.pas' {FAttEstr},
+  Produtos in 'Produtos.pas' {FProdutos};
 
 {$R *.res}
 
@@ -18,5 +19,6 @@ begin
   Application.CreateForm(TDM, DM);
   Application.CreateForm(TFUsuarios, FUsuarios);
   Application.CreateForm(TFAttEstr, FAttEstr);
+  Application.CreateForm(TFProdutos, FProdutos);
   Application.Run;
 end.
